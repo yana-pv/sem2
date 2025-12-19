@@ -146,7 +146,11 @@ namespace ClientWPF.Services
                             GameId = gameId;
                             PlayerId = playerId;
                             GameCreated?.Invoke(this, EventArgs.Empty);
-                            MessageReceived?.Invoke(this, $"[серв] Игра создана: {gameId} (PlayerId: {playerId})");
+                            MessageReceived?.Invoke(this, $"✅ GameCreated обработана: {gameId}");
+                        }
+                        else
+                        {
+                            MessageReceived?.Invoke(this, $"❌ Ошибка парсинга GameCreated. Получено: '{gameData}' (parts: {parts.Length})");
                         }
                         break;
 
@@ -161,8 +165,12 @@ namespace ClientWPF.Services
                             GameId = joinedGameId;
                             PlayerId = joinedPlayerId;
                         }
+                        else
+                        {
+                            MessageReceived?.Invoke(this, $"❌ Ошибка парсинга PlayerJoined. Получено: '{joinData}' (parts: {joinParts.Length})");
+                        }
                         PlayerJoined?.Invoke(this, EventArgs.Empty);
-                        MessageReceived?.Invoke(this, $"[серв] Подтверждение присоединения: {GameId}");
+                        MessageReceived?.Invoke(this, $"✅ PlayerJoined обработана: {GameId}");
                         break;
 
                     case Command.GameStarted:
@@ -242,10 +250,12 @@ namespace ClientWPF.Services
         }
 
         // Методы для конкретных команд
-        public async Task CreateGameAsync(string playerName)
+        public async Task CreateGameAsync(string playerName, int maxPlayers = 5)
         {
             PlayerName = playerName;
-            await SendCommandAsync(Command.CreateGame, playerName);
+            // Ограничиваем значение от 2 до 5
+            maxPlayers = Math.Clamp(maxPlayers, 2, 5);
+            await SendCommandAsync(Command.CreateGame, $"{playerName}:{maxPlayers}");
         }
 
         public async Task JoinGameAsync(Guid gameId, string playerName)
