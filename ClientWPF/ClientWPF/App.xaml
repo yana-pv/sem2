@@ -1,0 +1,11 @@
+﻿<Application x:Class="ClientWPF.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:ClientWPF.Converters"
+             Startup="Application_Startup">
+    <Application.Resources>
+        <converters:BoolToCurrentPlayerConverter x:Key="BoolToCurrentPlayerConverter"/>
+        <converters:BoolToAliveConverter x:Key="BoolToAliveConverter"/>
+        <converters:IconIdToSymbolConverter x:Key="IconIdToSymbolConverter"/>
+    </Application.Resources>
+</Application>

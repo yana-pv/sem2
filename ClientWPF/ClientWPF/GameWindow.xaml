@@ -1,0 +1,589 @@
+﻿<Window x:Class="ClientWPF.GameWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ClientWPF"
+        mc:Ignorable="d"
+        Title="Взрывные Котята - Игра"
+        WindowState="Maximized"
+        WindowStyle="None"
+        WindowStartupLocation="CenterScreen"
+        Background="#0c2461"
+        KeyDown="Window_KeyDown">
+
+    <Grid>
+        <Rectangle Fill="#0c2461"/>
+        <Grid Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Верхняя панель информации -->
+            <Border Grid.Row="0" 
+                    Background="#FFFFFFE6"
+                    CornerRadius="15"
+                    Padding="15"
+                    Margin="0,0,0,10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Текущий ход -->
+                    <Border Grid.Column="0"
+                            CornerRadius="10"
+                            Padding="12,8"
+                            HorizontalAlignment="Left"
+                            Background="#06D6A0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🎮" FontSize="18" Margin="0,0,8,0"/>
+                            <StackPanel>
+                                <TextBlock Text="ТЕКУЩИЙ ХОД" 
+                                           FontSize="11" 
+                                           Foreground="White"
+                                           FontWeight="Bold"/>
+                                <TextBlock x:Name="CurrentPlayerLabel"
+                                           Text="Ожидание..."
+                                           FontSize="14"
+                                           Foreground="White"
+                                           FontWeight="Bold"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Таймер -->
+                    <Border Grid.Column="1"
+                            HorizontalAlignment="Center"
+                            CornerRadius="10"
+                            Padding="12,8"
+                            Background="#FF6A11">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⏱" FontSize="18" Margin="0,0,8,0"/>
+                            <StackPanel>
+                                <TextBlock Text="ОСТАЛОСЬ ВРЕМЕНИ" 
+                                           FontSize="11" 
+                                           Foreground="White"
+                                           FontWeight="Bold"/>
+                                <TextBlock x:Name="TimerLabel"
+                                           Text="--:--"
+                                           FontSize="20"
+                                           Foreground="White"
+                                           FontWeight="Bold"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Статистика -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <!-- Игроки онлайн -->
+                        <Border CornerRadius="10"
+                                Padding="12,8"
+                                Margin="0,0,8,0"
+                                Background="#4a148c">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="👥" FontSize="18" Margin="0,0,8,0"/>
+                                <StackPanel>
+                                    <TextBlock Text="ИГРОКОВ" 
+                                               FontSize="11" 
+                                               Foreground="White"
+                                               FontWeight="Bold"/>
+                                    <TextBlock x:Name="PlayersCountLabel"
+                                               Text="0"
+                                               FontSize="14"
+                                               Foreground="White"
+                                               FontWeight="Bold"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Карты в колоде -->
+                        <Border CornerRadius="10"
+                                Padding="12,8"
+                                Margin="0,0,8,0"
+                                Background="#118AB2">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🃏" FontSize="18" Margin="0,0,8,0"/>
+                                <StackPanel>
+                                    <TextBlock Text="КОЛОДА" 
+                                               FontSize="11" 
+                                               Foreground="White"
+                                               FontWeight="Bold"/>
+                                    <TextBlock x:Name="DeckCountLabel"
+                                               Text="0"
+                                               FontSize="14"
+                                               Foreground="White"
+                                               FontWeight="Bold"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Ход -->
+                        <Border CornerRadius="10"
+                                Padding="12,8"
+                                Background="#EF476F">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🔢" FontSize="18" Margin="0,0,8,0"/>
+                                <StackPanel>
+                                    <TextBlock Text="ХОД" 
+                                               FontSize="11" 
+                                               Foreground="White"
+                                               FontWeight="Bold"/>
+                                    <TextBlock x:Name="TurnNumberLabel"
+                                               Text="#1"
+                                               FontSize="14"
+                                               Foreground="White"
+                                               FontWeight="Bold"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Основная область игры -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Левый игрок -->
+                <Border x:Name="LeftPlayerPanel"
+                        Grid.Column="0"
+                        Background="#FFFFFFE6"
+                        CornerRadius="15"
+                        Margin="10"
+                        Padding="15"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Width="220"
+                        Visibility="Collapsed">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <Border Width="40" Height="40" 
+                                    CornerRadius="20"
+                                    Background="#06D6A0"
+                                    Margin="0,0,10,0">
+                                <TextBlock x:Name="LeftPlayerEmoji"
+                                           Text="😼" 
+                                           FontSize="16"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock x:Name="LeftPlayerName"
+                                           Text="Игрок3"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="LeftPlayerCards"
+                                           Text="0 карт"
+                                           FontSize="11"
+                                           Foreground="#666"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Карты левого игрока (рубашками вверх) -->
+                        <WrapPanel x:Name="LeftPlayerCardsPanel"
+                                   HorizontalAlignment="Center" 
+                                   Margin="0,5,0,0">
+                            <!-- Карты будут добавляться динамически -->
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Центральная область -->
+                <Grid Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Верхний игрок -->
+                    <Border x:Name="TopPlayerPanel"
+                            Grid.Row="0"
+                            Background="#FFFFFFE6"
+                            CornerRadius="15"
+                            Margin="0,0,0,15"
+                            Padding="15"
+                            HorizontalAlignment="Center"
+                            Width="280"
+                            Visibility="Collapsed">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <Border Width="40" Height="40" 
+                                        CornerRadius="20"
+                                        Background="#FF6A11"
+                                        Margin="0,0,10,0">
+                                    <TextBlock x:Name="TopPlayerEmoji"
+                                               Text="👑" 
+                                               FontSize="16"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock x:Name="TopPlayerName"
+                                               Text="Игрок2"
+                                               FontSize="14"
+                                               FontWeight="Bold"
+                                               HorizontalAlignment="Center"/>
+                                    <TextBlock x:Name="TopPlayerCards"
+                                               Text="0 карт"
+                                               FontSize="11"
+                                               Foreground="#666"
+                                               HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Карты верхнего игрока -->
+                            <WrapPanel x:Name="TopPlayerCardsPanel"
+                                       HorizontalAlignment="Center" 
+                                       Margin="0,5,0,0">
+                                <!-- Карты будут добавляться динамически -->
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Центр: колода и сброс -->
+                    <Grid Grid.Row="1" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Колода -->
+                        <StackPanel Grid.Column="0" 
+                                    HorizontalAlignment="Right" 
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,50,0">
+                            <TextBlock Text="🃏 КОЛОДА" 
+                                       FontSize="16"
+                                       FontWeight="Bold"
+                                       Foreground="White"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,10"/>
+
+                            <Grid Width="150" Height="210" HorizontalAlignment="Center">
+                                <Border CornerRadius="15"
+                                        BorderBrush="#FFD166"
+                                        BorderThickness="4"
+                                        Cursor="Hand"
+                                        MouseLeftButtonDown="Deck_MouseLeftButtonDown"
+                                        ToolTip="Взять карту из колоды">
+                                    <Border.Background>
+                                        <ImageBrush ImageSource="Resources/Shirt.png" 
+                                                    Stretch="UniformToFill"/>
+                                    </Border.Background>
+                                </Border>
+                                <TextBlock x:Name="DeckCountText"
+                                           Text="20"
+                                           FontSize="36"
+                                           FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           TextAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Сообщения и лог игры -->
+                        <Border Grid.Column="1"
+                                Background="#FFFFFFCC"
+                                CornerRadius="15"
+                                Padding="15"
+                                Width="350"
+                                VerticalAlignment="Center"
+                                Margin="20">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="📝 ЛОГ ИГРЫ" 
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Foreground="#4a148c"
+                                           Margin="0,0,0,10"/>
+
+                                <ScrollViewer Grid.Row="1"
+                                              VerticalScrollBarVisibility="Auto"
+                                              MaxHeight="250">
+                                    <TextBlock x:Name="GameLogText"
+                                               Text=""
+                                               Foreground="#333"
+                                               FontSize="12"
+                                               TextWrapping="Wrap"/>
+                                </ScrollViewer>
+
+                                <TextBox Grid.Row="2"
+                                         x:Name="ChatTextBox"
+                                         Margin="0,10,0,0"
+                                         Padding="8"
+                                         FontSize="12"
+                                         Background="#F8F9FA"
+                                         BorderBrush="#E9ECEF"
+                                         BorderThickness="1"
+                                         KeyDown="ChatTextBox_KeyDown"
+                                         IsEnabled="False">
+                                    <TextBox.Resources>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="8"/>
+                                        </Style>
+                                    </TextBox.Resources>
+                                </TextBox>
+                            </Grid>
+                        </Border>
+
+                        <!-- Сброс -->
+                        <StackPanel Grid.Column="2" 
+                                    HorizontalAlignment="Left" 
+                                    VerticalAlignment="Center"
+                                    Margin="50,0,0,0">
+                            <TextBlock Text="🗑️ СБРОС" 
+                                       FontSize="16"
+                                       FontWeight="Bold"
+                                       Foreground="White"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,0,0,10"/>
+
+                            <Grid Width="150" Height="210" HorizontalAlignment="Center">
+                                <Border Width="150" Height="210"
+                                        CornerRadius="15"
+                                        BorderThickness="4"
+                                        x:Name="DiscardPile"
+                                        ToolTip="Колода сброса">
+                                    <Border.Background>
+                                        <!-- Будет меняться динамически -->
+                                        <ImageBrush ImageSource="Resources/Shirt.png" 
+                                                    Stretch="UniformToFill"/>
+                                    </Border.Background>
+                                </Border>
+                                <TextBlock x:Name="DiscardCountText"
+                                           Text="0"
+                                           FontSize="24"
+                                           FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Мои карты -->
+                    <Border Grid.Row="2"
+                            Background="#FFFFFFE6"
+                            CornerRadius="15"
+                            Margin="0,20,0,0"
+                            Padding="15">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,15">
+                                <TextBlock Text="🎴 " FontSize="18"/>
+                                <TextBlock Text="ВАШИ КАРТЫ" 
+                                           FontSize="18"
+                                           FontWeight="Bold"
+                                           Foreground="#4a148c"/>
+                                <Border Background="#FF6A11" 
+                                        CornerRadius="8"
+                                        Padding="6,3"
+                                        Margin="10,0,0,0">
+                                    <TextBlock x:Name="MyCardsCount"
+                                               Text="0 шт."
+                                               FontSize="12"
+                                               FontWeight="Bold"
+                                               Foreground="White"/>
+                                </Border>
+                            </StackPanel>
+
+                            <ScrollViewer x:Name="MyCardsScrollViewer"
+                                          HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          Height="180">
+                                <WrapPanel x:Name="MyCardsPanel"
+                                           Orientation="Horizontal" 
+                                           HorizontalAlignment="Center">
+                                    <!-- Карты будут добавляться динамически -->
+                                </WrapPanel>
+                            </ScrollViewer>
+
+                            <TextBlock x:Name="TurnInstructions"
+                                       Text=""
+                                       FontSize="12"
+                                       Foreground="#666"
+                                       HorizontalAlignment="Center"
+                                       Margin="0,10,0,0"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Правый игрок -->
+                <Border x:Name="RightPlayerPanel"
+                        Grid.Column="2"
+                        Background="#FFFFFFE6"
+                        CornerRadius="15"
+                        Margin="10"
+                        Padding="15"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Width="220"
+                        Visibility="Collapsed">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <Border Width="40" Height="40" 
+                                    CornerRadius="20"
+                                    Background="#FF4500"
+                                    Margin="0,0,10,0">
+                                <TextBlock x:Name="RightPlayerEmoji"
+                                           Text="😺" 
+                                           FontSize="16"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock x:Name="RightPlayerName"
+                                           Text="Игрок4"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="RightPlayerCards"
+                                           Text="0 карт"
+                                           FontSize="11"
+                                           Foreground="#666"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Карты правого игрока -->
+                        <WrapPanel x:Name="RightPlayerCardsPanel"
+                                   HorizontalAlignment="Center" 
+                                   Margin="0,5,0,0">
+                            <!-- Карты будут добавляться динамически -->
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Нижняя панель управления -->
+            <Border Grid.Row="2"
+        Background="#FFFFFFE6"
+        CornerRadius="15"
+        Padding="15"
+        Margin="0,10,0,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <!-- Кнопка взять карту -->
+                    <Button x:Name="DrawCardButton"
+                Width="160" Height="45"
+                Foreground="White"
+                FontSize="14"
+                FontWeight="Bold"
+                Cursor="Hand"
+                Margin="0,0,10,0"
+                Click="DrawCardButton_Click"
+                IsEnabled="False">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="10"/>
+                            </Style>
+                        </Button.Resources>
+                        <Button.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#06D6A0" Offset="0"/>
+                                <GradientStop Color="#0ABF8F" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Button.Background>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="🎴" FontSize="16" Margin="0,0,8,0"/>
+                            <TextBlock Text="ВЗЯТЬ КАРТУ"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Кнопка сыграть выбранную карту -->
+                    <Button x:Name="PlaySelectedCardButton"
+                Width="180" Height="45"
+                Foreground="White"
+                FontSize="14"
+                FontWeight="Bold"
+                Cursor="Hand"
+                Margin="10,0,10,0"
+                Click="PlaySelectedCardButton_Click"
+                IsEnabled="False">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="10"/>
+                            </Style>
+                        </Button.Resources>
+                        <Button.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#4a148c" Offset="0"/>
+                                <GradientStop Color="#6a24bc" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Button.Background>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="▶️" FontSize="16" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="PlayCardText" Text="СЫГРАТЬ КАРТУ"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Кнопка сыграть комбо -->
+                    <Button x:Name="PlayComboButton"
+                Width="160" Height="45"
+                Foreground="White"
+                FontSize="14"
+                FontWeight="Bold"
+                Cursor="Hand"
+                Margin="10,0,10,0"
+                Click="PlayComboButton_Click"
+                IsEnabled="False">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="10"/>
+                            </Style>
+                        </Button.Resources>
+                        <Button.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#FF6A11" Offset="0"/>
+                                <GradientStop Color="#FF8A31" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Button.Background>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="✨" FontSize="16" Margin="0,0,8,0"/>
+                            <TextBlock Text="СЫГРАТЬ КОМБО"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Кнопка меню -->
+                    <Button x:Name="MenuButton"
+                Width="120" Height="45"
+                Background="#666666"
+                Foreground="White"
+                FontSize="13"
+                FontWeight="Bold"
+                Cursor="Hand"
+                Margin="10,0,0,0"
+                Click="MenuButton_Click">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="10"/>
+                            </Style>
+                        </Button.Resources>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <TextBlock Text="⚙️" FontSize="16" Margin="0,0,6,0"/>
+                            <TextBlock Text="МЕНЮ"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>
