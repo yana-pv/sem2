@@ -77,7 +77,26 @@ namespace ClientWPF
 
             // Добавляем первое сообщение в лог
             AddToLog($"🎮 Добро пожаловать в игру, {_playerName}!");
-            AddToLog("⏳ Ожидание начала игры...");
+            AddToLog("⏳ Запрос состояния игры...");
+
+            // Запрашиваем состояние игры и руку игрока
+            _ = RequestGameStateAsync();
+        }
+
+        private async Task RequestGameStateAsync()
+        {
+            try
+            {
+                if (_gameService.GameId.HasValue)
+                {
+                    await _gameService.GetGameStateAsync(_gameService.GameId.Value);
+                    await _gameService.GetPlayerHandAsync(_gameService.GameId.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                AddToLog($"❌ Ошибка запроса состояния: {ex.Message}");
+            }
         }
 
         private void SetupPlayersLayout(int playersCount)

@@ -252,6 +252,16 @@ namespace ClientWPF.Services
             await SendCommandAsync(Command.StartGame, gameId.ToString());
         }
 
+        public async Task GetGameStateAsync(Guid gameId)
+        {
+            await SendCommandAsync(Command.GetGameState, gameId.ToString());
+        }
+
+        public async Task GetPlayerHandAsync(Guid gameId)
+        {
+            await SendCommandAsync(Command.GetPlayerHand, $"{gameId}:{PlayerId}");
+        }
+
         public async Task PlayCardAsync(Guid gameId, int cardIndex, string? additionalData = null)
         {
             var payload = additionalData != null

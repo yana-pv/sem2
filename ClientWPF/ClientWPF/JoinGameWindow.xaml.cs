@@ -193,8 +193,8 @@ namespace ClientWPF
                 else
                 {
                     AddMessage($"✅ Успешно подключились к игре {_gameService.GameId}!");
-                    AddMessage("⏳ Ожидание начала игры...");
-                    WaitingStatusText.Text = "Ожидание начала игры...";
+                    AddMessage("⏳ Игра скоро начнется, подождите");
+                    WaitingStatusText.Text = "Игра скоро начнется, подождите";
                 }
             }
             catch (Exception ex)

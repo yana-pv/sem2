@@ -2,6 +2,8 @@
 using Common.Enums;
 using Common.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -30,7 +32,7 @@ namespace ClientWPF
             // Настройка таймера для обновления статуса
             _updateTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromSeconds(2)
+                Interval = TimeSpan.FromSeconds(1)
             };
             _updateTimer.Tick += UpdateTimer_Tick;
 
@@ -38,6 +40,8 @@ namespace ClientWPF
             _gameService.MessageReceived += OnMessageReceived;
             _gameService.GameCreated += OnGameCreated;
             _gameService.GameStateUpdated += OnGameStateUpdated;
+            _gameService.PlayerJoined += OnPlayerJoined;
+            _gameService.GamesListUpdated += OnGamesListUpdated;
         }
 
         private async void CreateButton_Click(object sender, RoutedEventArgs e)
@@ -71,11 +75,33 @@ namespace ClientWPF
                 CreateButton.Visibility = Visibility.Collapsed; // Исправлено
                 StartButton.Visibility = Visibility.Visible;    // Исправлено
 
+                // Ждем пока GameClientService установит GameId (максимум 5 секунд)
+                var created = false;
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                while (sw.Elapsed < TimeSpan.FromSeconds(5))
+                {
+                    if (_gameService.GameId.HasValue)
+                    {
+                        _gameId = _gameService.GameId.Value;
+                        GameIdText.Text = _gameId.ToString();
+                        AddMessage($"🎮 ID игры: {_gameId}");
+                        created = true;
+                        break;
+                    }
+                    await Task.Delay(100);
+                }
+                sw.Stop();
+
                 _updateTimer.Start();
 
                 AddMessage($"✅ Игра создана: {roomName}");
                 AddMessage($"👥 Ожидание игроков: 1/{_maxPlayers}");
                 AddMessage("📢 Отправьте ID другим игрокам для подключения");
+
+                if (!created)
+                {
+                    AddMessage("⚠️ ID игры пока не получен от сервера. Он появится в ленте, как только сервер ответит.");
+                }
             }
             catch (Exception ex)
             {
@@ -146,17 +172,56 @@ namespace ClientWPF
 
         private void UpdateTimer_Tick(object? sender, EventArgs e)
         {
-            // Обновляем статус игроков
-            // В реальности здесь должен быть запрос к серверу
-            _currentPlayers = Math.Min(_currentPlayers + 1, _maxPlayers);
-            PlayersCountText.Text = $"Игроков: {_currentPlayers}/{_maxPlayers}";
-            WaitingStatusText.Text = $"Ожидание игроков... ({_currentPlayers}/{_maxPlayers})";
-
-            // Проверяем, можно ли начать игру
-            if (_currentPlayers >= 2)
+            // Получаем актуальное состояние игры из сервиса
+            // Информацию об игроках получаем из GamesListUpdated события
+            if (_gameService.AvailableGames != null)
             {
-                StartButton.IsEnabled = true;
+                var currentGame = _gameService.AvailableGames.FirstOrDefault(g => g.Id == _gameId);
+                if (currentGame != null)
+                {
+                    _currentPlayers = currentGame.PlayersCount;
+                    PlayersCountText.Text = $"Игроков: {_currentPlayers}/{currentGame.MaxPlayers}";
+                    WaitingStatusText.Text = $"Ожидание игроков... ({_currentPlayers}/{currentGame.MaxPlayers})";
+
+                    // Проверяем, можно ли начать игру (как минимум 2 игрока)
+                    if (_currentPlayers >= 2)
+                    {
+                        StartButton.IsEnabled = true;
+                    }
+                }
             }
+        }
+
+        private void OnPlayerJoined(object? sender, EventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                AddMessage($"👤 Новый игрок присоединился!");
+                // Счетчик обновится через UpdateTimer_Tick
+            });
+        }
+
+        private void OnGamesListUpdated(object? sender, List<GameSessionInfoDto> games)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                // Обновляем информацию о текущей игре
+                if (_gameId != Guid.Empty)
+                {
+                    var gameInfo = games.FirstOrDefault(g => g.Id == _gameId);
+                    if (gameInfo != null)
+                    {
+                        _currentPlayers = gameInfo.PlayersCount;
+                        PlayersCountText.Text = $"Игроков: {_currentPlayers}/{gameInfo.MaxPlayers}";
+                        WaitingStatusText.Text = $"Ожидание игроков... ({_currentPlayers}/{gameInfo.MaxPlayers})";
+
+                        if (_currentPlayers >= 2)
+                        {
+                            StartButton.IsEnabled = true;
+                        }
+                    }
+                }
+            });
         }
 
         private void OnMessageReceived(object? sender, string message)
