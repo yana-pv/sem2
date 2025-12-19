@@ -42,6 +42,10 @@ namespace ClientWPF
             _gameService.GameStateUpdated += OnGameStateUpdated;
             _gameService.PlayerJoined += OnPlayerJoined;
             _gameService.GamesListUpdated += OnGamesListUpdated;
+
+            // Устанавливаем максимальное количество игроков по умолчанию
+            PlayersComboBox.SelectedIndex = 3; // 5 игроков по умолчанию
+            _maxPlayers = 5;
         }
 
         private async void CreateButton_Click(object sender, RoutedEventArgs e)
@@ -66,14 +70,21 @@ namespace ClientWPF
             try
             {
                 CreateButton.IsEnabled = false;
-                await _gameService.CreateGameAsync(_playerName);
-
-                // Показываем панель ожидания
+                
+                // Показываем панель ожидания и ID до создания
                 GameIdPanel.Visibility = Visibility.Visible;
+                GameIdText.Text = "⏳ Генерируется...";
                 WaitingPanel.Visibility = Visibility.Visible;
                 MessagesPanel.Visibility = Visibility.Visible;
-                CreateButton.Visibility = Visibility.Collapsed; // Исправлено
-                StartButton.Visibility = Visibility.Visible;    // Исправлено
+                CreateButton.Visibility = Visibility.Collapsed;
+                StartButton.Visibility = Visibility.Visible;
+                StartButton.IsEnabled = false;
+
+                AddMessage($"⏳ Создание игры: {roomName}...");
+                AddMessage($"📊 Максимум игроков: {_maxPlayers}");
+
+                // Отправляем имя игрока и максимальное количество игроков
+                await _gameService.SendCommandAsync(Command.CreateGame, $"{_playerName}:{_maxPlayers}");
 
                 // Ждем пока GameClientService установит GameId (максимум 5 секунд)
                 var created = false;
@@ -84,7 +95,8 @@ namespace ClientWPF
                     {
                         _gameId = _gameService.GameId.Value;
                         GameIdText.Text = _gameId.ToString();
-                        AddMessage($"🎮 ID игры: {_gameId}");
+                        AddMessage($"✅ 🎮 ID ИГРЫ: {_gameId}");
+                        AddMessage("📋 Нажмите кнопку копирования ID для отправки другим игрокам");
                         created = true;
                         break;
                     }
@@ -92,15 +104,17 @@ namespace ClientWPF
                 }
                 sw.Stop();
 
-                _updateTimer.Start();
-
-                AddMessage($"✅ Игра создана: {roomName}");
-                AddMessage($"👥 Ожидание игроков: 1/{_maxPlayers}");
-                AddMessage("📢 Отправьте ID другим игрокам для подключения");
-
                 if (!created)
                 {
-                    AddMessage("⚠️ ID игры пока не получен от сервера. Он появится в ленте, как только сервер ответит.");
+                    AddMessage("⚠️ ID игры не получен, попробуйте позже");
+                    GameIdText.Text = "❌ Ошибка";
+                }
+                else
+                {
+                    _updateTimer.Start();
+                    AddMessage($"✅ Игра создана: {roomName}");
+                    AddMessage($"👥 Текущая очередь: 1/{_maxPlayers}");
+                    AddMessage("📢 Ожидаем подключение игроков...");
                 }
             }
             catch (Exception ex)
@@ -108,6 +122,7 @@ namespace ClientWPF
                 MessageBox.Show($"Ошибка создания игры: {ex.Message}", "Ошибка",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 CreateButton.IsEnabled = true;
+                GameIdText.Text = "❌ Ошибка создания";
             }
         }
 
@@ -183,10 +198,22 @@ namespace ClientWPF
                     PlayersCountText.Text = $"Игроков: {_currentPlayers}/{currentGame.MaxPlayers}";
                     WaitingStatusText.Text = $"Ожидание игроков... ({_currentPlayers}/{currentGame.MaxPlayers})";
 
-                    // Проверяем, можно ли начать игру (как минимум 2 игрока)
-                    if (_currentPlayers >= 2)
+                    // Проверяем, можно ли начать игру (2-5 игроков)
+                    bool canStart = _currentPlayers >= 2 && _currentPlayers <= currentGame.MaxPlayers;
+                    
+                    if (canStart != StartButton.IsEnabled)
                     {
-                        StartButton.IsEnabled = true;
+                        StartButton.IsEnabled = canStart;
+                        if (canStart)
+                        {
+                            StartButton.Background = new SolidColorBrush(Color.FromRgb(33, 150, 243)); // Ярко-синий
+                            AddMessage($"✅ Достаточно игроков ({_currentPlayers}/{currentGame.MaxPlayers}) - можно начать!");
+                        }
+                        else
+                        {
+                            StartButton.Background = new SolidColorBrush(Color.FromRgb(189, 189, 189)); // Серый
+                            AddMessage($"⏳ Нужно еще игроков ({_currentPlayers}/{currentGame.MaxPlayers})...");
+                        }
                     }
                 }
             }
@@ -196,8 +223,8 @@ namespace ClientWPF
         {
             Dispatcher.Invoke(() =>
             {
-                AddMessage($"👤 Новый игрок присоединился!");
-                // Счетчик обновится через UpdateTimer_Tick
+                AddMessage($"✨ Новый игрок присоединился к игре!");
+                // Счетчик обновится через UpdateTimer_Tick и OnGamesListUpdated
             });
         }
 
@@ -215,9 +242,16 @@ namespace ClientWPF
                         PlayersCountText.Text = $"Игроков: {_currentPlayers}/{gameInfo.MaxPlayers}";
                         WaitingStatusText.Text = $"Ожидание игроков... ({_currentPlayers}/{gameInfo.MaxPlayers})";
 
-                        if (_currentPlayers >= 2)
+                        // Проверяем, можно ли начать игру (2-5 игроков)
+                        bool canStart = _currentPlayers >= 2 && _currentPlayers <= gameInfo.MaxPlayers;
+                        
+                        if (canStart)
                         {
                             StartButton.IsEnabled = true;
+                        }
+                        else if (_currentPlayers < 2)
+                        {
+                            StartButton.IsEnabled = false;
                         }
                     }
                 }

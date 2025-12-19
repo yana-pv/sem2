@@ -137,15 +137,21 @@ namespace ClientWPF
                 return;
             }
 
+            AddMessage($"🔗 Попытка подключиться к игре {gameId}...");
             await ConnectToGameAsync(gameId);
         }
 
         private async void JoinGameItemButton_Click(object sender, RoutedEventArgs e)
         {
-            if (_isConnecting) return;
+            if (_isConnecting) 
+            {
+                ShowStatus("❌ Уже идет подключение", true);
+                return;
+            }
 
             if (sender is Button button && button.Tag is string tag && Guid.TryParse(tag, out Guid gameId))
             {
+                AddMessage($"✅ Выбрана игра {gameId}, подключаемся...");
                 await ConnectToGameAsync(gameId);
             }
         }
@@ -230,6 +236,7 @@ namespace ClientWPF
             if (GamesListView.SelectedItem is GameSessionInfoDto selectedGame)
             {
                 GameIdTextBox.Text = selectedGame.Id.ToString();
+                AddMessage($"📌 Выбрана игра: {selectedGame.Name} (ID: {selectedGame.Id})");
             }
         }
 
