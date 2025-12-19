@@ -68,6 +68,11 @@ namespace ClientWPF.Services
 
                 var package = BuildPackage(command, payloadBytes);
                 await _socket.SendAsync(package, SocketFlags.None);
+                // Небольшое диагностическое сообщение для UX
+                if (command == Command.CreateGame)
+                    MessageReceived?.Invoke(this, "Запрос на создание игры отправлен");
+                if (command == Command.JoinGame)
+                    MessageReceived?.Invoke(this, "Запрос на присоединение отправлен");
             }
             catch (Exception ex)
             {
@@ -141,6 +146,7 @@ namespace ClientWPF.Services
                             GameId = gameId;
                             PlayerId = playerId;
                             GameCreated?.Invoke(this, EventArgs.Empty);
+                            MessageReceived?.Invoke(this, $"[серв] Игра создана: {gameId} (PlayerId: {playerId})");
                         }
                         break;
 
@@ -156,6 +162,7 @@ namespace ClientWPF.Services
                             PlayerId = joinedPlayerId;
                         }
                         PlayerJoined?.Invoke(this, EventArgs.Empty);
+                        MessageReceived?.Invoke(this, $"[серв] Подтверждение присоединения: {GameId}");
                         break;
 
                     case Command.GameStarted:
